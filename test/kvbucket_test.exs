@@ -4,6 +4,7 @@ defmodule KvBucketTest do
   import KvBucket
 
   test "starts a kvb" do
-    assert KvBucket.start() == :id
+    assert start() == :ok
+  end
   end
 end

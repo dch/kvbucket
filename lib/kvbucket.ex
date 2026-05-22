@@ -9,10 +9,16 @@ defmodule KvBucket do
   ## Examples
 
       iex> KvBucket.start()
-      :id
+      :ok
 
   """
+
+  @cluster "anubis"
+
+  @spec start() :: :ok
   def start do
-    :id
+    {:ok, :khepri} = :khepri_cluster.start(@cluster)
+    :ok
+  end
   end
 end
