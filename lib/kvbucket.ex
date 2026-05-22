@@ -12,13 +12,16 @@ defmodule KvBucket do
       :ok
 
   """
+  @type key :: :khepri_path.unix_path()
+  @type value :: any
 
   @cluster "anubis"
 
   @spec start() :: :ok
   def start do
     {:ok, :khepri} = :khepri_cluster.start(@cluster)
-    :ok
+    true = :khepri_cluster.is_store_running(:khepri)
+    :ok = :khepri_cluster.wait_for_leader(:khepri)
   end
 
   @spec stop() :: :ok
@@ -30,5 +33,22 @@ defmodule KvBucket do
       {:error, {:khepri, :not_a_khepri_store, %{}}} -> :ok
       {:error, reason} -> {:error, reason}
     end
+  end
+
+  @spec get(key()) :: {:ok, value()} | {:error, any()}
+  def get(key) do
+    case resp = :khepri.get(key) do
+      {:ok, _} ->
+        resp
+
+      {:error, {:khepri, :node_not_found, %{}}} ->
+        {:error, :not_found}
+
+      {:error, _reason} ->
+        resp
+    end
+  end
+
+  def get(key, value) do
   end
 end

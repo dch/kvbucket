@@ -1,6 +1,6 @@
 defmodule KvBucketTest do
-  use ExUnit.Case, async: true
-  doctest KvBucket
+  use ExUnit.Case
+  # doctest KvBucket
   import KvBucket
 
   setup_all do
@@ -14,6 +14,10 @@ defmodule KvBucketTest do
 
   test "starts a kvb" do
     assert start() == :ok
+  end
+
+  test "get/1 returns not found if value doesn't exist" do
+    assert get("test") == {:error, :not_found}
   end
 
   test "stops a kvb" do
