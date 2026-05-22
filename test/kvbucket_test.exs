@@ -6,5 +6,8 @@ defmodule KvBucketTest do
   test "starts a kvb" do
     assert start() == :ok
   end
+
+  test "stops a kvb" do
+    assert stop() == :ok
   end
 end
