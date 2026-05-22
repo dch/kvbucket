@@ -1,18 +1,18 @@
-defmodule Kvbucket do
+defmodule KvBucket do
   @moduledoc """
-  Documentation for `Kvbucket`.
+  Documentation for `KvBucket`.
   """
 
   @doc """
-  Hello world.
+  Start KvBucket
 
   ## Examples
 
-      iex> Kvbucket.hello()
-      :world
+      iex> KvBucket.start()
+      :id
 
   """
-  def hello do
-    :world
+  def start do
+    :id
   end
 end

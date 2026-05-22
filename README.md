@@ -1,4 +1,4 @@
-# Kvbucket
+# KvBucket
 
 **TODO: Add description**
 

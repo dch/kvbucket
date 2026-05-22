@@ -1,4 +1,4 @@
-defmodule Kvbucket.MixProject do
+defmodule KvBucket.MixProject do
   use Mix.Project
 
   def project do
@@ -14,7 +14,7 @@ defmodule Kvbucket.MixProject do
   def application do
     [
       extra_applications: [:logger],
-      mod: {Kvbucket.Application, []}
+      mod: {KvBucket.Application, []}
     ]
   end
 

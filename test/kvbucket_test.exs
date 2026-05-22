@@ -1,8 +1,9 @@
-defmodule KvbucketTest do
-  use ExUnit.Case
-  doctest Kvbucket
+defmodule KvBucketTest do
+  use ExUnit.Case, async: true
+  doctest KvBucket
+  import KvBucket
 
-  test "greets the world" do
-    assert Kvbucket.hello() == :world
+  test "starts a kvb" do
+    assert KvBucket.start() == :id
   end
 end
