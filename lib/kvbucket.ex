@@ -79,4 +79,27 @@ defmodule KvBucket do
 
   @spec put(key(), value()) :: :ok | {:error, any()}
   def put(key, value), do: :khepri.put(key, value)
+
+  @doc """
+  Deletes the value provided if it exists in the bucket.
+  If not, it returns an error
+  You can provide an optional variable to return a tuple with the deleted value
+  """
+  @spec delete(key(), value()) :: :ok | {:error, any()}
+  def delete(key, return \\ false) do
+    # :khepri.delete returns :ok even if the value doesnt exist
+    # so we use our get function
+    # for user transparency
+    case get(key) do
+      {:ok, value} ->
+        :khepri.delete(key)
+        if return, do: {:ok, value}, else: :ok
+
+      {:error, :not_found} ->
+        {:error, :not_found}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
 end
