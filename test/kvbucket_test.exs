@@ -4,7 +4,9 @@ defmodule KvBucketTest do
   import KvBucket
 
   setup_all do
-    clean_working_dir()
+    on_exit(fn -> tear_down() end)
+    :ok == clean_working_dir()
+    start()
   end
 
   defp clean_working_dir() do
@@ -12,11 +14,12 @@ defmodule KvBucketTest do
     :ok
   end
 
-  test "starts a kvb" do
-    assert start() == :ok
+  defp tear_down do
+    :ok == stop()
+    clean_working_dir()
   end
 
-  test "stops a kvb" do
-    assert stop() == :ok
+  test "get/1 returns not found if value doesn't exist" do
+    assert get("test") == {:error, :not_found}
   end
 end
