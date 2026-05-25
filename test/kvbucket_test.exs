@@ -22,4 +22,20 @@ defmodule KvBucketTest do
   test "get/1 returns not found if value doesn't exist" do
     assert get("test") == {:error, :not_found}
   end
+
+  test "Deleting an existing value works" do
+    put("test", :a)
+    assert get("test") == {:ok, :a}
+
+    assert delete("test") == :ok
+    assert get("test") == {:error, :not_found}
+  end
+
+  test "Deleting an existing value with return set to true returns the value as a tuple" do
+    put("test", :a)
+    assert get("test") == {:ok, :a}
+
+    assert delete("test", true) == {:ok, :a}
+    assert get("test") == {:error, :not_found}
+  end
 end
