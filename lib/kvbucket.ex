@@ -11,6 +11,15 @@ defmodule KvBucket do
       iex> KvBucket.start()
       :ok
 
+      iex> KvBucket.get(:key, "default")
+      "default"
+
+      iex> KvBucket.put(:key, "value")
+      :ok
+
+      iex> KvBucket.get(:key)
+      "value"
+
   """
   @type key :: :khepri_path.unix_path()
   @type value :: any
@@ -50,5 +59,9 @@ defmodule KvBucket do
   end
 
   def get(key, value) do
+  end
+
+  @spec put(key(), value()) :: :ok | {:error, any()}
+  def put(key, value) do
   end
 end
