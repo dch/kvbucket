@@ -10,15 +10,12 @@ defmodule KvBucket do
 
       iex> KvBucket.start()
       :ok
-
-      iex> KvBucket.get(:key, "default")
-      "default"
-
-      iex> KvBucket.put(:key, "value")
+      iex> KvBucket.get("key", "default")
+      {:ok, "default"}
+      iex> KvBucket.put("key", "value")
       :ok
-
-      iex> KvBucket.get(:key)
-      "value"
+      iex> KvBucket.get("key")
+      {:ok, "value"}
 
   """
   @type key :: :khepri_path.unix_path()
@@ -29,8 +26,14 @@ defmodule KvBucket do
   @spec start() :: :ok
   def start do
     {:ok, :khepri} = :khepri_cluster.start(@cluster)
-    true = :khepri_cluster.is_store_running(:khepri)
-    :ok = :khepri_cluster.wait_for_leader(:khepri)
+
+    case :khepri_cluster.is_store_running(:khepri) do
+      true ->
+        :ok
+
+      false ->
+        :ok = :khepri_cluster.wait_for_leader(:khepri, 3_000)
+    end
   end
 
   @spec stop() :: :ok
@@ -44,6 +47,10 @@ defmodule KvBucket do
     end
   end
 
+  @doc """
+  Returns the value of a key in the bucket if it exists.
+  If not, it returns an error tuple.
+  """
   @spec get(key()) :: {:ok, value()} | {:error, any()}
   def get(key) do
     case resp = :khepri.get(key) do
@@ -58,10 +65,18 @@ defmodule KvBucket do
     end
   end
 
+  @doc """
+  Returns the value of a key in the bucket if it exists.
+  If not, it returns the default value provided.
+  """
+  @spec get(key(), value()) :: {:ok, value()} | {:error, any()}
   def get(key, value) do
+    case resp = get(key) do
+      {:error, :not_found} -> {:ok, value}
+      resp -> resp
+    end
   end
 
   @spec put(key(), value()) :: :ok | {:error, any()}
-  def put(key, value) do
-  end
+  def put(key, value), do: :khepri.put(key, value)
 end
