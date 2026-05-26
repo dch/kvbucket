@@ -20,7 +20,7 @@ defmodule KvBucket.MixProject do
 
   defp deps do
     [
-      {:khepri, "~> 0.18"},
+      {:khepri, "~> 0.18"}
     ]
   end
 end
