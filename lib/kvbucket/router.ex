@@ -32,8 +32,22 @@ defmodule KvBucket.Router do
   end
 
   put "/put" do
-    IO.inspect(conn.body_params)
-    send_resp(conn, 200, "Success")
+    case conn.body_params do
+      %{"key" => key, "value" => value} ->
+        case KvBucket.put(key, value) do
+          :ok -> send_resp(conn, 200, "Added value #{value} to key #{key}.")
+        end
+
+      # change status code later
+      _ ->
+        send_resp(conn, 404, """
+        Wrong format! Please use the following:
+        {
+          "key": <key>,
+          "value": <value>
+        }
+        """)
+    end
   end
 
   match _ do
