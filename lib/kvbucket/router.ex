@@ -35,7 +35,7 @@ defmodule KvBucket.Router do
     case conn.body_params do
       %{"key" => key, "value" => value} ->
         case KvBucket.put(key, value) do
-          :ok -> send_resp(conn, 200, "Added value #{value} to key #{key}.")
+          :ok -> send_resp(conn, 200, "Added value `#{value}` to key `#{key}`.")
         end
 
       # change status code later
