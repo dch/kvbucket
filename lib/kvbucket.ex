@@ -71,7 +71,7 @@ defmodule KvBucket do
   """
   @spec get(key(), value()) :: {:ok, value()} | {:error, any()}
   def get(key, value) do
-    case resp = get(key) do
+    case get(key) do
       {:error, :not_found} -> {:ok, value}
       resp -> resp
     end
@@ -84,6 +84,7 @@ defmodule KvBucket do
   Deletes the value provided if it exists in the bucket.
   If not, it returns an error
   You can provide an optional variable to return a tuple with the deleted value
+  but only if it exists prior to deletion
   """
   @spec delete(key(), value()) :: :ok | {:error, any()}
   def delete(key, return \\ false) do

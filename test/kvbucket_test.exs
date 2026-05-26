@@ -32,10 +32,10 @@ defmodule KvBucketTest do
   end
 
   test "Deleting an existing value with return set to true returns the value as a tuple" do
-    put("test", :a)
-    assert get("test") == {:ok, :a}
+    put("test_b", :a)
+    assert get("test_b") == {:ok, :a}
 
-    assert delete("test", true) == {:ok, :a}
-    assert get("test") == {:error, :not_found}
+    assert delete("test_b", true) == {:ok, :a}
+    assert get("test_b") == {:error, :not_found}
   end
 end
