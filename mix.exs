@@ -21,6 +21,7 @@ defmodule KvBucket.MixProject do
   defp deps do
     [
       {:bandit, "~>1.11"},
+      {:jason, "~> 1.4"},
       {:khepri, "~> 0.18"},
       {:plug, "~> 1.19"}
     ]
