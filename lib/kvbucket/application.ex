@@ -10,6 +10,7 @@ defmodule KvBucket.Application do
     children = [
       # Starts a worker by calling: KvBucket.Worker.start_link(arg)
       # {KvBucket.Worker, arg}
+      {Bandit, plug: KvBucket.Router, port: 4000}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
