@@ -26,8 +26,8 @@ defmodule KvBucket.Router do
       {:error, {:khepri, :node_not_found, %{}}} ->
         send_resp(conn, 404, "Key was not found")
 
-      {:error, _reason} ->
-        send_resp(conn, 404, "An unknown error occured.")
+      {:error, reason} ->
+        send_resp(conn, 404, reason)
     end
   end
 
@@ -39,6 +39,26 @@ defmodule KvBucket.Router do
         end
 
       # change status code later
+      _ ->
+        send_resp(conn, 404, """
+        Wrong format! Please use the following:
+        {
+          "key": <key>,
+          "value": <value>
+        }
+        """)
+    end
+  end
+
+  delete "/delete" do
+    case conn.body_params do
+      %{"key" => key} ->
+        case KvBucket.delete(key, true) do
+          {:ok, value} -> send_resp(conn, 200, Jason.encode!(value))
+          {:error, :not_found} -> send_resp(conn, 404, "Key was not found.")
+          {:error, reason} -> send_resp(conn, 404, reason)
+        end
+
       _ ->
         send_resp(conn, 404, """
         Wrong format! Please use the following:
