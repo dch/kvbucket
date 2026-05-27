@@ -19,15 +19,25 @@ defmodule KvBucket.Router do
   get "/get/:key" do
     default = conn.params["default"] || nil
 
-    case KvBucket.get(key, default) do
+    result =
+      case default do
+        nil -> KvBucket.get(key)
+        default -> KvBucket.get(key, default)
+      end
+
+    case result do
       {:ok, value} ->
         send_resp(conn, 200, Jason.encode!(value))
 
+      # Im sure these two can be combined into one
       {:error, {:khepri, :node_not_found, %{}}} ->
         send_resp(conn, 404, "Key was not found")
 
+      {:error, :not_found} ->
+        send_resp(conn, 404, "Key was not found")
+
       {:error, reason} ->
-        send_resp(conn, 404, reason)
+        send_resp(conn, 500, inspect(reason))
     end
   end
 
@@ -40,7 +50,7 @@ defmodule KvBucket.Router do
 
       # change status code later
       _ ->
-        send_resp(conn, 404, """
+        send_resp(conn, 400, """
         Wrong format! Please use the following:
         {
           "key": <key>,
@@ -60,7 +70,7 @@ defmodule KvBucket.Router do
         end
 
       _ ->
-        send_resp(conn, 404, """
+        send_resp(conn, 400, """
         Wrong format! Please use the following:
         {
           "key": <key>,
