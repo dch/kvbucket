@@ -17,24 +17,29 @@ defmodule KvBucket.Router do
   end
 
   get "/get/:key" do
-    {status, response_body} = handle_get(key, conn.body_params["default"])
+    {status, response_body} = handle_get(key, conn.query_params["default"])
     send_resp(conn, status, response_body)
   end
 
-  @spec handle_get(String.t(), String.t()) :: {integer(), String.t()}
-  def handle_get(key, default \\ "") do
+  @spec handle_get(String.t(), String.t() | nil) :: {integer(), String.t()}
+  def handle_get(key, default) do
+    dbg({key, default})
+
     result =
       case default do
-        "" -> KvBucket.get(key)
+        nil -> KvBucket.get(key)
         default -> KvBucket.get(key, default)
       end
 
     case result do
       {:ok, value} ->
-        {200, value}
+        {200, Jason.encode!(value)}
 
       {:error, {:khepri, :node_not_found, %{}}} ->
         {404, "Key could not be found"}
+
+      {:error, reason} ->
+        {404, inspect(reason)}
     end
   end
 
