@@ -19,4 +19,8 @@ defmodule KvBucket.Application do
     opts = [strategy: :one_for_one, name: KvBucket.Supervisor]
     Supervisor.start_link(children, opts)
   end
+
+  def dump do
+    Application.get_all_env(:kvbucket) |> dbg()
+  end
 end
