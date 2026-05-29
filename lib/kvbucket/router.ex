@@ -16,15 +16,13 @@ defmodule KvBucket.Router do
     send_resp(conn, 200, "hi")
   end
 
-  get "/get/:key" do
+  get "/:key" do
     {status, response_body} = handle_get(key, conn.query_params["default"])
     send_resp(conn, status, response_body)
   end
 
   @spec handle_get(String.t(), String.t() | nil) :: {integer(), String.t()}
   def handle_get(key, default) do
-    dbg({key, default})
-
     result =
       case default do
         nil -> KvBucket.get(key)
@@ -43,9 +41,9 @@ defmodule KvBucket.Router do
     end
   end
 
-  put "/put" do
+  put "/:key" do
     case conn.body_params do
-      %{"key" => key, "value" => value} ->
+      %{"value" => value} ->
         case KvBucket.put(key, value) do
           :ok -> send_resp(conn, 200, "Added value `#{value}` to key `#{key}`.")
         end
@@ -62,7 +60,7 @@ defmodule KvBucket.Router do
     end
   end
 
-  delete "/delete" do
+  delete "/:key" do
     case conn.body_params do
       %{"key" => key} ->
         case KvBucket.delete(key, true) do
