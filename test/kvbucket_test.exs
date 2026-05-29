@@ -77,7 +77,7 @@ defmodule KvBucketTest do
       key = "test_delete"
       value = "test"
 
-      conn = conn(:put, "/#{key}", %{"key" => key, "value" => value})
+      conn = conn(:put, "/#{key}", %{"value" => value})
       conn = KvBucket.Router.call(conn, @opts)
 
       assert conn.state == :sent
@@ -89,7 +89,7 @@ defmodule KvBucketTest do
       assert conn.state == :sent
       assert conn.status == 200
 
-      conn = conn(:delete, "/#{key}", %{"key" => key})
+      conn = conn(:delete, "/#{key}")
       conn = KvBucket.Router.call(conn, @opts)
 
       assert conn.state == :sent
@@ -113,6 +113,13 @@ defmodule KvBucketTest do
       conn = conn(:put, "/wrong", %{"wrong" => "format"})
       conn = KvBucket.Router.call(conn, @opts)
       assert conn.status == 400
+    end
+
+    test "get /idontexist?default=idoexist returns default value" do
+      conn = conn(:get, "idontexist?default=idoexist")
+      conn = KvBucket.Router.call(conn, @opts)
+      assert conn.status == 200
+      assert Jason.decode!(conn.resp_body) == "idoexist"
     end
   end
 end

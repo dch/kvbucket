@@ -61,22 +61,10 @@ defmodule KvBucket.Router do
   end
 
   delete "/:key" do
-    case conn.body_params do
-      %{"key" => key} ->
-        case KvBucket.delete(key, true) do
-          {:ok, value} -> send_resp(conn, 200, Jason.encode!(value))
-          {:error, :not_found} -> send_resp(conn, 404, "Key was not found.")
-          {:error, reason} -> send_resp(conn, 404, reason)
-        end
-
-      _ ->
-        send_resp(conn, 400, """
-        Wrong format! Please use the following:
-        {
-          "key": <key>,
-          "value": <value>
-        }
-        """)
+    case KvBucket.delete(key, true) do
+      {:ok, value} -> send_resp(conn, 200, Jason.encode!(value))
+      {:error, :not_found} -> send_resp(conn, 404, "Key was not found.")
+      {:error, reason} -> send_resp(conn, 404, reason)
     end
   end
 
