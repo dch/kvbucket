@@ -17,27 +17,24 @@ defmodule KvBucket.Router do
   end
 
   get "/get/:key" do
-    default = conn.params["default"] || nil
+    {status, response_body} = handle_get(key, conn.body_params["default"])
+    send_resp(conn, status, response_body)
+  end
 
+  @spec handle_get(String.t(), String.t()) :: {integer(), String.t()}
+  def handle_get(key, default \\ "") do
     result =
       case default do
-        nil -> KvBucket.get(key)
+        "" -> KvBucket.get(key)
         default -> KvBucket.get(key, default)
       end
 
     case result do
       {:ok, value} ->
-        send_resp(conn, 200, Jason.encode!(value))
+        {200, value}
 
-      # Im sure these two can be combined into one
       {:error, {:khepri, :node_not_found, %{}}} ->
-        send_resp(conn, 404, "Key was not found")
-
-      {:error, :not_found} ->
-        send_resp(conn, 404, "Key was not found")
-
-      {:error, reason} ->
-        send_resp(conn, 500, inspect(reason))
+        {404, "Key could not be found"}
     end
   end
 
