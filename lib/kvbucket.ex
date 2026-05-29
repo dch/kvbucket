@@ -18,22 +18,28 @@ defmodule KvBucket do
       {:ok, "value"}
 
   """
+  use GenServer
+
   @type key :: :khepri_path.unix_path()
   @type value :: any
 
-  @cluster "anubis"
+  def start_link(store: store) do
+    GenServer.start_link(__MODULE__, dbg(%{store: store, cluster_name: nil}), name: __MODULE__)
+  end
 
-  @spec start() :: :ok
-  def start do
-    {:ok, :khepri} = :khepri_cluster.start(@cluster)
+  @spec init(any()) :: {:ok, any()}
+  def init(state = %{store: store}) do
+    {:ok, cluster_name} = :khepri_cluster.start(store)
 
-    case :khepri_cluster.is_store_running(:khepri) do
+    case :khepri_cluster.is_store_running(cluster_name) do
       true ->
         :ok
 
       false ->
-        :ok = :khepri_cluster.wait_for_leader(:khepri, 3_000)
+        :ok = :khepri_cluster.wait_for_leader(cluster_name, 3_000)
     end
+
+    {:ok, %{state | cluster_name: cluster_name}}
   end
 
   @spec stop() :: :ok

@@ -9,7 +9,7 @@ defmodule KvBucket.Application do
   def start(_type, _args) do
     children = [
       # Starts a worker by calling: KvBucket.Worker.start_link(arg)
-      # {KvBucket.Worker, arg}
+      {KvBucket, store: "anubis"},
       {Bandit, plug: KvBucket.Router, port: 4000}
     ]
 
