@@ -1,6 +1,6 @@
 defmodule KvBucketTest do
   use ExUnit.Case, async: false
-  doctest KvBucket
+  # doctest KvBucket
 
   import Plug.Test
   import Plug.Conn
@@ -53,12 +53,14 @@ defmodule KvBucketTest do
       bucket
     end
 
-    @opts KvBucket.Router.init(bucket: start_http_bucket())
+    defp opts do
+      KvBucket.Router.init(bucket: start_http_bucket())
+    end
 
     test "get '/' returns 'hi'" do
       conn = conn(:get, "/")
 
-      conn = KvBucket.Router.call(conn, @opts)
+      conn = KvBucket.Router.call(conn, opts())
 
       assert conn.state == :sent
       assert conn.status == 200
@@ -71,13 +73,13 @@ defmodule KvBucketTest do
 
       conn =
         conn(:put, "/#{key}", %{"value" => value})
-        |> KvBucket.Router.call(@opts)
+        |> KvBucket.Router.call(opts())
 
       assert conn.status == 200
 
       conn =
         conn(:get, "/#{key}")
-        |> KvBucket.Router.call(@opts)
+        |> KvBucket.Router.call(opts())
 
       assert conn.status == 200
       assert Jason.decode!(conn.resp_body) == value
@@ -89,11 +91,11 @@ defmodule KvBucketTest do
 
       conn =
         conn(:put, "/#{key}", %{"value" => value})
-        |> KvBucket.Router.call(@opts)
+        |> KvBucket.Router.call(opts())
 
       conn =
         conn(:delete, "/#{key}")
-        |> KvBucket.Router.call(@opts)
+        |> KvBucket.Router.call(opts())
 
       assert conn.status == 200
       assert Jason.decode!(conn.resp_body) == value
@@ -101,25 +103,25 @@ defmodule KvBucketTest do
 
     test "get '/idontexist' returns 404 for missing key" do
       conn = conn(:get, "/idontexist")
-      conn = KvBucket.Router.call(conn, @opts)
+      conn = KvBucket.Router.call(conn, opts())
       assert conn.status == 404
     end
 
     test "delete '/idontexist' returns 404 for missing key" do
       conn = conn(:delete, "/idontexist", %{"key" => "idontexist"})
-      conn = KvBucket.Router.call(conn, @opts)
+      conn = KvBucket.Router.call(conn, opts())
       assert conn.status == 404
     end
 
     test "put '/wrong' returns 400 for missing key/value" do
       conn = conn(:put, "/wrong", %{"wrong" => "format"})
-      conn = KvBucket.Router.call(conn, @opts)
+      conn = KvBucket.Router.call(conn, opts())
       assert conn.status == 400
     end
 
     test "get /idontexist?default=idoexist returns default value" do
       conn = conn(:get, "/idontexist?default=idoexist")
-      conn = KvBucket.Router.call(conn, @opts)
+      conn = KvBucket.Router.call(conn, opts())
 
       assert conn.status == 200
       assert Jason.decode!(conn.resp_body) == "idoexist"
