@@ -24,7 +24,7 @@ defmodule KvBucket do
   @type value :: any
 
   def start_link(store: store) do
-    GenServer.start_link(__MODULE__, dbg(%{store: store, cluster_name: nil}))
+    GenServer.start_link(__MODULE__, %{store: store, cluster_name: nil})
   end
 
   @spec init(any()) :: {:ok, any()}
@@ -32,17 +32,13 @@ defmodule KvBucket do
     {:ok, cluster_name} = :khepri_cluster.start(store)
 
     case :khepri_cluster.is_store_running(cluster_name) do
-      true ->
-        :ok
-
-      false ->
-        :ok = :khepri_cluster.wait_for_leader(cluster_name, 3_000)
+      true -> :ok
+      false -> :khepri_cluster.wait_for_leader(cluster_name, 3_000)
     end
 
     {:ok, %{state | cluster_name: cluster_name}}
   end
 
-  @spec stop() :: :ok
   def stop do
     :khepri = :khepri_cluster.get_default_store_id()
 
@@ -53,33 +49,54 @@ defmodule KvBucket do
     end
   end
 
-  @spec handle_get(key()) :: {:ok, value()} | {:error, any()}
+  def put(bucket, key, value),
+    do: GenServer.call(bucket, {:put, key, value})
+
+  def get(bucket, key),
+    do: GenServer.call(bucket, {:get, key})
+
+  @spec get(atom() | pid() | {atom(), any()} | {:via, atom(), any()}, any(), any()) :: any()
+  def get(bucket, key, default),
+    do: GenServer.call(bucket, {:get, key, default})
+
+  def delete(bucket, key, return \\ false),
+    do: GenServer.call(bucket, {:delete, key, return})
+
+  def handle_call({:put, key, value}, _from, state) do
+    {:reply, handle_put(key, value), state}
+  end
+
+  def handle_call({:get, key}, _from, state) do
+    {:reply, handle_get(key), state}
+  end
+
+  def handle_call({:get, key, default}, _from, state) do
+    {:reply, handle_get(key, default), state}
+  end
+
+  def handle_call({:delete, key, return}, _from, state) do
+    {:reply, handle_delete(key, return), state}
+  end
+
   defp handle_get(key) do
-    case resp = :khepri.get(key) do
-      {:ok, _} ->
-        resp
-
-      {:error, {:khepri, :node_not_found, %{}}} ->
-        {:error, :not_found}
-
-      {:error, _reason} ->
-        resp
+    case :khepri.get(key) do
+      {:ok, _} = ok -> ok
+      {:error, {:khepri, :node_not_found, %{}}} -> {:error, :not_found}
+      {:error, reason} -> {:error, reason}
     end
   end
 
-  @spec handle_get(key(), value()) :: {:ok, value()} | {:error, any()}
-  defp handle_get(key, value) do
+  defp handle_get(key, default) do
     case handle_get(key) do
-      {:error, :not_found} -> {:ok, value}
-      resp -> resp
+      {:error, :not_found} ->
+        {:ok, default}
+
+      resp ->
+        resp
     end
   end
 
-  @spec handle_put(key(), value()) :: :ok | {:error, any()}
-  defp handle_put(key, value), do: :khepri.put(key, value)
-
-  @spec handle_delete(key(), value()) :: :ok | {:error, any()}
-  defp handle_delete(key, return \\ false) do
+  defp handle_delete(key, return) do
     # :khepri.delete returns :ok even if the value doesnt exist
     # so we use our get function
     # for user transparency
@@ -88,45 +105,10 @@ defmodule KvBucket do
         :khepri.delete(key)
         if return, do: {:ok, value}, else: :ok
 
-      {:error, :not_found} ->
-        {:error, :not_found}
-
-      {:error, reason} ->
-        {:error, reason}
+      error ->
+        error
     end
   end
 
-  def put(bucket, key, value), do: GenServer.call(bucket, {:put, key, value})
-
-  @doc """
-  Returns the value of a key in the bucket if it exists.
-  If not, it returns an error tuple.
-  """
-  def get(bucket, key), do: GenServer.call(bucket, {:get, key})
-
-  @doc """
-  Returns the value of a key in the bucket if it exists.
-  If not, it returns the default value provided.
-  """
-  def get(bucket, key, default), do: GenServer.call(bucket, {:get, key, default})
-
-  @doc """
-  Deletes the value provided if it exists in the bucket.
-  If not, it returns an error
-  You can provide an optional variable to return a tuple with the deleted value
-  but only if it exists prior to deletion
-  """
-  def delete(bucket, key, return \\ false), do: GenServer.call(bucket, {:delete, key, return})
-
-  def handle_call({:put, key, value}, _from, state),
-    do: {:reply, handle_put(key, value), state}
-
-  def handle_call({:get, key}, _from, state),
-    do: {:reply, handle_get(key), state}
-
-  def handle_call({:get, key, default}, _from, state),
-    do: {:reply, handle_get(key, default), state}
-
-  def handle_call({:delete, key, return}, _from, state),
-    do: {:reply, handle_delete(key, return), state}
+  defp handle_put(key, value), do: :khepri.put(key, value)
 end
