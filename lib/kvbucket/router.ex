@@ -12,28 +12,38 @@ defmodule KvBucket.Router do
 
   plug(:dispatch)
 
-  get("/") do
+  def init(opts), do: opts
+
+  # https://plug.hexdocs.pm/Plug.Conn.html#assign/3
+  def call(conn, opts) do
+    conn
+    |> assign(:bucket, opts[:bucket])
+    |> super(opts)
+  end
+
+  get "/" do
     send_resp(conn, 200, "hi")
   end
 
   get "/:key" do
-    {status, response_body} = handle_get(key, conn.query_params["default"])
+    {status, response_body} =
+      handle_get(conn.assigns.bucket, key, conn.query_params["default"])
+
     send_resp(conn, status, response_body)
   end
 
-  @spec handle_get(String.t(), String.t() | nil) :: {integer(), String.t()}
-  def handle_get(key, default) do
+  def handle_get(bucket, key, default) do
     result =
       case default do
-        nil -> KvBucket.get(key)
-        default -> KvBucket.get(key, default)
+        nil -> KvBucket.get(bucket, key)
+        default -> KvBucket.get(bucket, key, default)
       end
 
     case result do
       {:ok, value} ->
         {200, Jason.encode!(value)}
 
-      {:error, {:khepri, :node_not_found, %{}}} ->
+      {:error, :not_found} ->
         {404, "Key could not be found"}
 
       {:error, reason} ->
@@ -44,11 +54,11 @@ defmodule KvBucket.Router do
   put "/:key" do
     case conn.body_params do
       %{"value" => value} ->
-        case KvBucket.put(key, value) do
-          :ok -> send_resp(conn, 200, "Added value `#{value}` to key `#{key}`.")
+        case KvBucket.put(conn.assigns.bucket, key, value) do
+          :ok ->
+            send_resp(conn, 200, "Added value `#{value}` to key `#{key}`.")
         end
 
-      # change status code later
       _ ->
         send_resp(conn, 400, """
         Wrong format! Please use the following:
@@ -61,16 +71,14 @@ defmodule KvBucket.Router do
   end
 
   delete "/:key" do
-    case KvBucket.delete(key, true) do
+    case KvBucket.delete(conn.assigns.bucket, key, true) do
       {:ok, value} -> send_resp(conn, 200, Jason.encode!(value))
       {:error, :not_found} -> send_resp(conn, 404, "Key was not found.")
-      {:error, reason} -> send_resp(conn, 404, reason)
+      {:error, reason} -> send_resp(conn, 404, inspect(reason))
     end
   end
 
   match _ do
     send_resp(conn, 404, "Not found")
   end
-
-  # conn.body_params = body
 end
