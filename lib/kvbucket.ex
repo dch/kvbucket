@@ -24,7 +24,7 @@ defmodule KvBucket do
   @type value :: any
 
   def start_link(store: store) do
-    GenServer.start_link(__MODULE__, dbg(%{store: store, cluster_name: nil}), name: __MODULE__)
+    GenServer.start_link(__MODULE__, dbg(%{store: store, cluster_name: nil}))
   end
 
   @spec init(any()) :: {:ok, any()}
@@ -53,12 +53,8 @@ defmodule KvBucket do
     end
   end
 
-  @doc """
-  Returns the value of a key in the bucket if it exists.
-  If not, it returns an error tuple.
-  """
-  @spec get(key()) :: {:ok, value()} | {:error, any()}
-  def get(key) do
+  @spec handle_get(key()) :: {:ok, value()} | {:error, any()}
+  defp handle_get(key) do
     case resp = :khepri.get(key) do
       {:ok, _} ->
         resp
@@ -71,33 +67,23 @@ defmodule KvBucket do
     end
   end
 
-  @doc """
-  Returns the value of a key in the bucket if it exists.
-  If not, it returns the default value provided.
-  """
-  @spec get(key(), value()) :: {:ok, value()} | {:error, any()}
-  def get(key, value) do
-    case get(key) do
+  @spec handle_get(key(), value()) :: {:ok, value()} | {:error, any()}
+  defp handle_get(key, value) do
+    case handle_get(key) do
       {:error, :not_found} -> {:ok, value}
       resp -> resp
     end
   end
 
-  @spec put(key(), value()) :: :ok | {:error, any()}
-  def put(key, value), do: :khepri.put(key, value)
+  @spec handle_put(key(), value()) :: :ok | {:error, any()}
+  defp handle_put(key, value), do: :khepri.put(key, value)
 
-  @doc """
-  Deletes the value provided if it exists in the bucket.
-  If not, it returns an error
-  You can provide an optional variable to return a tuple with the deleted value
-  but only if it exists prior to deletion
-  """
-  @spec delete(key(), value()) :: :ok | {:error, any()}
-  def delete(key, return \\ false) do
+  @spec handle_delete(key(), value()) :: :ok | {:error, any()}
+  defp handle_delete(key, return \\ false) do
     # :khepri.delete returns :ok even if the value doesnt exist
     # so we use our get function
     # for user transparency
-    case get(key) do
+    case handle_get(key) do
       {:ok, value} ->
         :khepri.delete(key)
         if return, do: {:ok, value}, else: :ok
@@ -109,4 +95,38 @@ defmodule KvBucket do
         {:error, reason}
     end
   end
+
+  def put(bucket, key, value), do: GenServer.call(bucket, {:put, key, value})
+
+  @doc """
+  Returns the value of a key in the bucket if it exists.
+  If not, it returns an error tuple.
+  """
+  def get(bucket, key), do: GenServer.call(bucket, {:get, key})
+
+  @doc """
+  Returns the value of a key in the bucket if it exists.
+  If not, it returns the default value provided.
+  """
+  def get(bucket, key, default), do: GenServer.call(bucket, {:get, key, default})
+
+  @doc """
+  Deletes the value provided if it exists in the bucket.
+  If not, it returns an error
+  You can provide an optional variable to return a tuple with the deleted value
+  but only if it exists prior to deletion
+  """
+  def delete(bucket, key, return \\ false), do: GenServer.call(bucket, {:delete, key, return})
+
+  def handle_call({:put, key, value}, _from, state),
+    do: {:reply, handle_put(key, value), state}
+
+  def handle_call({:get, key}, _from, state),
+    do: {:reply, handle_get(key), state}
+
+  def handle_call({:get, key, default}, _from, state),
+    do: {:reply, handle_get(key, default), state}
+
+  def handle_call({:delete, key, return}, _from, state),
+    do: {:reply, handle_delete(key, return), state}
 end
